@@ -1,0 +1,1093 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>SpinLab — Pre-Opening Dashboard</title>
+<style>
+  :root{
+    --navy:#0A2948; --navy-2:#123a63; --gold:#DCCB94; --gold-2:#c9b676;
+    --cream:#FEF9F2; --green:#2F4A3C; --green-2:#3d6152; --grey:#84919D;
+    --red:#B5544F; --line:#e4ddd0;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{margin:0; background:var(--cream); font-family:"Segoe UI","Helvetica Neue",Arial,sans-serif; color:var(--navy);}
+  .app{display:flex; min-height:100vh;}
+
+  .sidebar{width:250px; flex:0 0 250px; background:var(--navy); color:#fff; padding:24px 0 24px; position:sticky; top:0; height:100vh; overflow-y:auto;}
+  .sidebar .logo{padding:0 22px 20px; border-bottom:1px solid rgba(255,255,255,0.12); margin-bottom:14px;}
+  .sidebar .logo .eyebrow{font-size:10px; letter-spacing:0.22em; text-transform:uppercase; color:var(--gold);}
+  .sidebar .logo h1{font-size:19px; margin:4px 0 0; line-height:1.15; font-weight:800; font-family:"Arial Narrow",Arial,sans-serif;}
+  .sidebar .countdown{margin:0 16px 18px; background:rgba(255,255,255,0.08); border-radius:8px; padding:12px 14px; text-align:center;}
+  .sidebar .countdown .num{font-size:30px; font-weight:800; color:var(--gold); line-height:1;}
+  .sidebar .countdown .lbl{font-size:10px; text-transform:uppercase; letter-spacing:0.12em; color:#c7d2de; margin-top:3px;}
+  .sidebar .countdown .date{font-size:10px; color:#8fa3b8; margin-top:6px;}
+
+  nav.navlist{padding:0 10px;}
+  .navitem{display:flex; align-items:center; gap:10px; padding:11px 14px; margin:2px 0; border-radius:8px; cursor:pointer; font-size:13.5px; font-weight:600; color:#cfd9e2; border-left:3px solid transparent;}
+  .navitem:hover{background:rgba(255,255,255,0.06);}
+  .navitem.active{background:rgba(220,203,148,0.14); color:#fff; border-left:3px solid var(--gold);}
+  .navitem .dot{width:7px; height:7px; border-radius:50%; background:var(--grey); flex:0 0 auto;}
+  .navitem .pct{margin-left:auto; font-size:11px; color:#a9b8c4; font-weight:700;}
+  .navitem.active .pct{color:var(--gold);}
+
+  .navgroup-header{display:flex; align-items:center; gap:10px; padding:11px 14px; margin:2px 0; border-radius:8px; cursor:pointer; font-size:13.5px; font-weight:600; color:#cfd9e2; border-left:3px solid transparent;}
+  .navgroup-header:hover{background:rgba(255,255,255,0.06);}
+  .navgroup-header.has-active{background:rgba(220,203,148,0.08); color:#fff; border-left:3px solid var(--gold);}
+  .navgroup-header .dot{width:7px; height:7px; border-radius:50%; background:var(--grey); flex:0 0 auto;}
+  .navgroup-header .pct{font-size:11px; color:#a9b8c4; font-weight:700;}
+  .navgroup-header.has-active .pct{color:var(--gold);}
+  .chevron{margin-left:auto; font-size:9px; color:#8fa3b8; transition:transform 0.15s;}
+  .navgroup.expanded .chevron{transform:rotate(180deg);}
+  .navchildren{display:none; padding-left:6px; margin-bottom:2px;}
+  .navgroup.expanded .navchildren{display:block;}
+  .navchild{padding:8px 14px 8px 30px; margin:1px 6px; border-radius:7px; cursor:pointer; font-size:12.5px; color:#b9c6d1; font-weight:500;}
+  .navchild:hover{background:rgba(255,255,255,0.06);}
+  .navchild.active{background:rgba(220,203,148,0.18); color:#fff; font-weight:600;}
+  .navchild .pct{float:right; font-size:10.5px; color:#8fa3b8; font-weight:700;}
+  .navchild.active .pct{color:var(--gold);}
+
+  main{flex:1; padding:0 42px 60px; max-width:1080px;}
+
+  /* Sync bar */
+  .syncbar{
+    position:sticky; top:0; z-index:10; background:var(--cream);
+    display:flex; align-items:center; gap:10px; padding:14px 0 12px; margin-bottom:8px;
+    border-bottom:1px solid var(--line);
+  }
+  .syncbar .status{font-size:12px; color:var(--grey); flex:1;}
+  .syncbar .status.ok{color:var(--green);}
+  .syncbar .status.err{color:var(--red);}
+  .btn{
+    border:1px solid var(--line); background:#fff; color:var(--navy); font-size:12.5px; font-weight:600;
+    padding:7px 14px; border-radius:7px; cursor:pointer;
+  }
+  .btn:hover{background:#f4efe4;}
+  .btn.primary{background:var(--navy); color:#fff; border-color:var(--navy);}
+  .btn.primary:hover{background:var(--navy-2);}
+  .btn.small{padding:4px 10px; font-size:11.5px;}
+  .btn.danger{color:var(--red); border-color:#eccfcd;}
+
+  .settings-panel{
+    display:none; background:#fff; border:1px solid var(--line); border-radius:10px;
+    padding:18px 20px; margin-bottom:18px; max-width:640px;
+  }
+  .settings-panel.open{display:block;}
+  .settings-panel label{display:block; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--grey); margin-bottom:6px;}
+  .settings-panel input[type=text]{
+    width:100%; padding:9px 10px; border:1px solid var(--line); border-radius:7px; font-size:13px; margin-bottom:10px;
+  }
+  .settings-panel .row{display:flex; gap:10px; align-items:center; margin-bottom:10px;}
+  .settings-panel p{font-size:12px; color:var(--grey); line-height:1.5; margin:8px 0;}
+  .settings-panel a{color:var(--navy);}
+
+  .page{display:none; padding-top:14px;}
+  .page.active{display:block;}
+  .page-head{margin-bottom:20px;}
+  .page-head .eyebrow{font-size:11px; letter-spacing:0.18em; text-transform:uppercase; color:var(--grey); font-weight:700;}
+  .page-head h2{margin:4px 0 0; font-size:26px; color:var(--navy); font-family:"Arial Narrow",Arial,sans-serif;}
+  .page-head p{margin:6px 0 0; font-size:13px; color:var(--grey); max-width:600px;}
+
+  .overview{display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:8px;}
+  .kpi{background:#fff; border:1px solid var(--line); border-radius:10px; padding:16px 18px;}
+  .kpi .lbl{font-size:11px; text-transform:uppercase; letter-spacing:0.1em; color:var(--grey); font-weight:700;}
+  .kpi .val{font-size:26px; font-weight:800; margin-top:6px; color:var(--navy);}
+  .kpi .sub{font-size:12px; color:var(--grey); margin-top:2px;}
+
+  .cards{display:grid; grid-template-columns:repeat(2, 1fr); gap:14px; margin-top:24px;}
+  .card{background:#fff; border:1px solid var(--line); border-radius:12px; padding:16px 18px; position:relative; overflow:hidden; cursor:pointer;}
+  .card::before{content:""; position:absolute; left:0; top:0; bottom:0; width:5px; background:var(--green);}
+  .card.gold::before{background:var(--gold-2);}
+  .card-head{display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:8px;}
+  .card-head .grp{font-size:10px; text-transform:uppercase; letter-spacing:0.08em; color:var(--gold-2); font-weight:700; display:block; margin-bottom:2px;}
+  .card-head h3{margin:0; font-size:14px; color:var(--navy);}
+  .card-head .count{font-size:11.5px; color:var(--grey); margin-top:3px;}
+  .pct{font-size:19px; font-weight:800; color:var(--green); min-width:50px; text-align:right;}
+  .bar-track{height:7px; background:#eef0ee; border-radius:6px; overflow:hidden;}
+  .bar-fill{height:100%; background:var(--green); border-radius:6px;}
+
+  .subsection{margin-top:6px;}
+  .subsection-head{display:flex; align-items:baseline; justify-content:space-between; margin-bottom:10px;}
+  .meta{font-size:12px; color:var(--grey);}
+  .group-label{font-size:11px; text-transform:uppercase; letter-spacing:0.1em; color:var(--gold-2); font-weight:700; margin:18px 0 8px;}
+
+  table.data{width:100%; border-collapse:collapse; background:#fff; border:1px solid var(--line); border-radius:10px; overflow:hidden; margin-bottom:10px;}
+  table.data th{background:var(--navy); color:#fff; font-size:10.5px; text-transform:uppercase; letter-spacing:0.03em; text-align:left; padding:9px 10px; font-weight:700; overflow-wrap:break-word;}
+  table.data td{padding:9px 10px; font-size:12.5px; border-top:1px solid #f0ece2; color:var(--navy); vertical-align:middle; overflow-wrap:break-word; word-break:break-word;}
+  table.data tr:first-of-type td{border-top:none;}
+  table.data td.meta-col{color:var(--grey); font-size:11.5px;}
+  table.data td.actions{white-space:nowrap; text-align:right;}
+  table.data th.actions-col{width:112px;}
+
+  .chip{font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; padding:3px 9px; border-radius:20px; white-space:nowrap; display:inline-block;}
+  .chip.done{background:#e4ebe6; color:var(--green);}
+  .chip.progress{background:#f5efdd; color:#8a7327;}
+  .chip.notstarted{background:#edeff1; color:var(--grey);}
+  .chip.blocked{background:#f6e1e0; color:var(--red);}
+
+  .placeholder{font-size:13px; color:var(--grey); font-style:italic; padding:12px; background:#fff; border:1px dashed var(--line); border-radius:10px; margin-bottom:10px;}
+
+  input.cell-input, select.cell-input{
+    width:100%; padding:5px 6px; border:1px solid var(--gold-2); border-radius:5px; font-size:12.5px; font-family:inherit;
+  }
+
+  footer{margin-top:40px; padding-top:16px; border-top:1px solid var(--line); text-align:left; color:var(--grey); font-size:12px;}
+
+  .table-scroll{overflow-x:auto; -webkit-overflow-scrolling:touch;}
+
+  .mobile-topbar{display:none;}
+  .sidebar-backdrop{display:none;}
+  .hamburger-btn{
+    width:38px; height:38px; border:none; background:transparent; cursor:pointer;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; padding:0;
+  }
+  .hamburger-btn span{display:block; width:22px; height:2px; background:#fff; border-radius:2px;}
+
+  @media (max-width:900px){
+    .app{flex-direction:column;}
+
+    .mobile-topbar{
+      display:flex; align-items:center; gap:14px; background:var(--navy); color:#fff;
+      padding:12px 16px; position:sticky; top:0; z-index:1001;
+    }
+    .mobile-title{font-size:15px; font-weight:800; font-family:"Arial Narrow",Arial,sans-serif; letter-spacing:0.02em;}
+
+    .sidebar{
+      position:fixed; top:0; left:0; height:100vh; width:82%; max-width:320px;
+      transform:translateX(-105%); transition:transform 0.25s ease; z-index:1002;
+      box-shadow:6px 0 30px rgba(0,0,0,0.35);
+    }
+    .sidebar.open{transform:translateX(0);}
+
+    .sidebar-backdrop{
+      display:block; position:fixed; inset:0; background:rgba(10,41,72,0.55);
+      opacity:0; pointer-events:none; transition:opacity 0.2s ease; z-index:1001;
+    }
+    .sidebar-backdrop.open{opacity:1; pointer-events:auto;}
+
+    main{padding:0 16px 40px;}
+    .page{padding-top:10px;}
+    .overview{grid-template-columns:repeat(2,1fr);}
+    .cards{grid-template-columns:1fr;}
+    .syncbar{flex-wrap:wrap; padding:12px 0;}
+    .syncbar .status{width:100%; order:1;}
+    table.data{font-size:13px;}
+    table.data th, table.data td{padding:10px 8px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="mobile-topbar">
+    <button class="hamburger-btn" id="btnHamburger" aria-label="Open menu">
+      <span></span><span></span><span></span>
+    </button>
+    <span class="mobile-title">SpinLab Dashboard</span>
+  </div>
+  <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+  <div class="sidebar" id="sidebar">
+    <div class="logo"><span class="eyebrow">SpinLab &middot; HCMC</span><h1>PRE-OPENING<br>DASHBOARD</h1></div>
+    <div class="countdown">
+      <div class="num" id="daysNum">--</div>
+      <div class="lbl">Days to Opening</div>
+      <div class="date" id="targetDate"></div>
+    </div>
+    <nav class="navlist" id="navlist"></nav>
+  </div>
+
+  <main id="mainContent">
+
+    <div class="syncbar">
+      <span class="status" id="syncStatus">Not connected to Google Sheets.</span>
+      <button class="btn" id="btnRefresh">&#8635; Refresh</button>
+      <button class="btn" id="btnPushAll">&#8593; Push All</button>
+      <button class="btn" id="btnSettings">&#9881; Sync Settings</button>
+    </div>
+
+    <div class="settings-panel" id="settingsPanel">
+      <label>Google Apps Script Web App URL</label>
+      <input type="text" id="webappUrlInput" placeholder="https://script.google.com/macros/s/XXXXX/exec">
+      <div class="row">
+        <button class="btn primary" id="btnSaveUrl">Save &amp; Connect</button>
+        <button class="btn" id="btnTestConn">Test Connection</button>
+        <label style="display:flex; align-items:center; gap:6px; font-size:12px; font-weight:600; color:var(--navy); text-transform:none; letter-spacing:0;">
+          <input type="checkbox" id="autoSyncToggle" checked style="width:auto;"> Auto-push on edit
+        </label>
+      </div>
+      <p>
+        Paste the Web App URL from your deployed Google Apps Script (see Code.gs walkthrough).
+        Saving updates this page's link — bookmark the address bar afterward so it's remembered next time
+        (this file can't use browser storage, so the URL isn't saved automatically between sessions).
+      </p>
+      <p id="settingsMsg"></p>
+    </div>
+
+    <div class="page active" id="page-overview">
+      <div class="page-head"><span class="eyebrow">Overview</span><h2>Everything, at a glance</h2><p>Progress across every pillar and sub-area. Click a card to jump straight to the detail.</p></div>
+      <div class="overview" id="overviewCards"></div>
+      <div class="cards" id="categoryCards"></div>
+    </div>
+
+    <div class="page" id="page-operations-staff">
+      <div class="page-head"><span class="eyebrow">Operations</span><h2>Staff</h2><p>Everyone hired or in process for front-of-house and operations roles.</p></div>
+      <div class="subsection"><span class="meta" id="opsStaffMeta"></span><div id="opsStaffTable"></div></div>
+    </div>
+    <div class="page" id="page-operations-court">
+      <div class="page-head"><span class="eyebrow">Operations</span><h2>Court</h2><p>Install sequence: foundation &rarr; frame &amp; glass &rarr; turf &amp; infill &rarr; net &rarr; lighting &rarr; decoration.</p></div>
+      <div class="subsection"><span class="meta" id="courtMeta"></span><div id="courtTable"></div></div>
+    </div>
+    <div class="page" id="page-operations-equipment">
+      <div class="page-head"><span class="eyebrow">Operations</span><h2>Equipment</h2><p>Rental &amp; court equipment plus pro-shop retail stock.</p></div>
+      <div class="subsection">
+        <span class="meta" id="equipMeta"></span>
+        <div class="group-label">Rental &amp; court equipment</div>
+        <div id="equipRentalTable"></div>
+        <div class="group-label">Shop items (retail)</div>
+        <div id="equipShopTable"></div>
+      </div>
+    </div>
+    <div class="page" id="page-operations-activities">
+      <div class="page-head"><span class="eyebrow">Operations</span><h2>Activities Calendar</h2><p>Full-year programming roadmap starting from opening month, across four quarters.</p></div>
+      <div class="subsection">
+        <span class="meta" id="activitiesMeta"></span>
+        <div class="group-label">Q1 &mdash; Aug&ndash;Oct 2026</div><div id="activitiesQ1Table"></div>
+        <div class="group-label">Q2 &mdash; Nov 2026&ndash;Jan 2027</div><div id="activitiesQ2Table"></div>
+        <div class="group-label">Q3 &mdash; Feb&ndash;Apr 2027</div><div id="activitiesQ3Table"></div>
+        <div class="group-label">Q4 &mdash; May&ndash;Jul 2027</div><div id="activitiesQ4Table"></div>
+      </div>
+    </div>
+    <div class="page" id="page-operations-dailychecklist">
+      <div class="page-head"><span class="eyebrow">Operations</span><h2>Daily Checklist</h2><p>Day-to-day cleanliness and readiness checks for the courts.</p></div>
+      <div class="subsection"><span class="meta" id="dailyMeta"></span><div id="dailyTable"></div></div>
+    </div>
+    <div class="page" id="page-operations-maintenance">
+      <div class="page-head"><span class="eyebrow">Operations</span><h2>Maintenance</h2><p>Recurring upkeep procedures for turf, glass, nets and fixtures.</p></div>
+      <div class="subsection"><span class="meta" id="maintMeta"></span><div id="maintTable"></div></div>
+    </div>
+
+    <div class="page" id="page-coaching-headcoach">
+      <div class="page-head"><span class="eyebrow">Coaching</span><h2>Head Coach</h2><p>Cross-sport and per-sport head coach roles.</p></div>
+      <div class="subsection"><span class="meta" id="headCoachMeta"></span><div id="headCoachTable"></div></div>
+    </div>
+    <div class="page" id="page-coaching-coach">
+      <div class="page-head"><span class="eyebrow">Coaching</span><h2>Coach</h2><p>Padel, pickleball and tennis coaches on revenue-split contracts.</p></div>
+      <div class="subsection"><span class="meta" id="coachMeta"></span><div id="coachTable"></div></div>
+    </div>
+    <div class="page" id="page-coaching-assistantcoach">
+      <div class="page-head"><span class="eyebrow">Coaching</span><h2>Assistant Coach</h2><p>Social hosts supporting coaching and social play programs.</p></div>
+      <div class="subsection"><span class="meta" id="assistCoachMeta"></span><div id="assistCoachTable"></div></div>
+    </div>
+    <div class="page" id="page-coaching-pipeline">
+      <div class="page-head"><span class="eyebrow">Coaching</span><h2>Pipeline</h2><p>Coach prospects being sourced or interviewed.</p></div>
+      <div class="subsection"><span class="meta" id="coachPipelineMeta"></span><div id="coachPipelineTable"></div></div>
+    </div>
+    <div class="page" id="page-coaching-schedule">
+      <div class="page-head"><span class="eyebrow">Coaching</span><h2>Schedule &amp; Policy Tasks</h2><p>Compensation policy, scheduling, and onboarding tasks behind the program.</p></div>
+      <div class="subsection"><span class="meta" id="coachTasksMeta"></span><div id="coachTasksTable"></div></div>
+    </div>
+
+    <div class="page" id="page-marketing-staff">
+      <div class="page-head"><span class="eyebrow">Marketing</span><h2>Staff</h2><p>Who's on the marketing team.</p></div>
+      <div class="subsection"><span class="meta" id="mktStaffMeta"></span><div id="mktStaffTable"></div></div>
+    </div>
+    <div class="page" id="page-marketing-accounts">
+      <div class="page-head"><span class="eyebrow">Marketing</span><h2>Accounts</h2><p>Social and digital account setup checklist.</p></div>
+      <div class="subsection"><span class="meta" id="marketingAccountsMeta"></span><div id="marketingAccountsTable"></div></div>
+    </div>
+    <div class="page" id="page-marketing-plan">
+      <div class="page-head"><span class="eyebrow">Marketing</span><h2>Plan</h2><p>Brand book and marketing plan tasks.</p></div>
+      <div class="subsection"><span class="meta" id="marketingPlanMeta"></span><div id="marketingPlanTable"></div></div>
+    </div>
+    <div class="page" id="page-marketing-content">
+      <div class="page-head"><span class="eyebrow">Marketing</span><h2>Content</h2><p>Content calendar across platforms.</p></div>
+      <div class="subsection"><span class="meta" id="contentPlanMeta"></span><div id="contentPlanTable"></div></div>
+    </div>
+
+    <div class="page" id="page-partnerships">
+      <div class="page-head"><span class="eyebrow">Pillar</span><h2>Partnerships</h2><p>Vendors and partners across facility operations, wellness, F&amp;B, sport equipment, legal, and federations.</p></div>
+      <div class="subsection">
+        <span class="meta" id="partnershipsMeta"></span>
+        <div class="group-label">Facility Operations</div><div id="partFacilityTable"></div>
+        <div class="group-label">Wellness &amp; Recovery</div><div id="partWellnessTable"></div>
+        <div class="group-label">Food &amp; Beverage</div><div id="partFBTable"></div>
+        <div class="group-label">Sport Equipment</div><div id="partEquipTable"></div>
+        <div class="group-label">Legal &amp; Compliance</div><div id="partLegalTable"></div>
+        <div class="group-label">Partnerships &amp; Memberships</div><div id="partMembershipTable"></div>
+      </div>
+    </div>
+
+    <footer>Opening target: August 15, 2026 &middot; Editable dashboard with 2-way Google Sheets sync &middot; SpinLab.club</footer>
+  </main>
+</div>
+
+<script>
+// ================= Countdown =================
+var target = new Date(2026, 7, 15);
+var today = new Date(); today.setHours(0,0,0,0);
+var daysLeft = Math.round((target - today) / (1000*60*60*24));
+document.getElementById('daysNum').textContent = daysLeft;
+document.getElementById('targetDate').textContent = target.toLocaleDateString('en-US', {month:'long', day:'numeric', year:'numeric'});
+
+// ================= Data (single "status" field per row; edit freely) =================
+var data = {
+  opsStaff: [
+    {role:"General Manager", headcount:1, empType:"Full-time", comp:"50,000,000 VND/mo", status:"Hired", assigned:"Trần Thế Bảo", timeline:"June — Onboard", notes:""},
+    {role:"Assistant Manager", headcount:1, empType:"Full-time", comp:"25,000,000–30,000,000 VND/mo (mid 27.5M)", status:"Hired", assigned:"Lê Thúy Anh", timeline:"June — Onboard", notes:"Also covers Operation Lead and Front Desk Lead duties"},
+    {role:"Front Desk / Reception", headcount:3, empType:"Full-time", comp:"12,000,000–17,000,000 VND/mo (mid 14.5M)", status:"JD in Prep", assigned:"", timeline:"Jul Recruit → Aug Onboard+Training", notes:"Shift-based (6:00–14:00 & 14:00–22:00)"},
+    {role:"Court Attendants", headcount:3, empType:"Full-time/Part-time", comp:"7,000,000–10,000,000 VND/mo (mid 8.5M)", status:"JD in Prep", assigned:"", timeline:"Jul Recruit → Aug Onboard+Training", notes:"Equipment, setup, support"},
+    {role:"Maintenance Technician", headcount:1, empType:"Full-time", comp:"12,000,000–15,000,000 VND/mo (mid 13.5M)", status:"JD in Prep", assigned:"", timeline:"Jul Recruit → Aug Onboard+Training", notes:"HVLS, courts, electrical"},
+    {role:"Pro Shop Staff", headcount:1, empType:"Full-time", comp:"9,000,000–11,000,000 VND/mo (mid 10M)", status:"Not Started", assigned:"", timeline:"Sept — Start", notes:"Shift-based (8:00–16:00 & 16:00–21:00)"},
+    {role:"Security", headcount:3, empType:"Contractor", comp:"TBD — outsourced quote", status:"Outsourcing - Get Quote", assigned:"", timeline:"Sept — Start", notes:"Considering outsourcing"},
+    {role:"Cleaning / Facility", headcount:5, empType:"Contractor", comp:"TBD — outsourced quote", status:"Outsourcing - Get Quote", assigned:"", timeline:"Sept — Start", notes:"Considering outsourcing"}
+  ],
+  courtOps: [
+    {category:"Receiving", task:"Receive & inspect shipment (turf rolls, glass panels, frames, net, net posts, lights)", courtType:"All", status:"Done", owner:"Facility Contractor", dueDate:"2026-07-19", notes:"Staged in warehouse"},
+    {category:"Foundation", task:"Build court foundation", courtType:"All", status:"Not Started", owner:"Facility Contractor", dueDate:"2026-07-25", notes:"Must complete before frame install"},
+    {category:"Frame & Glass", task:"Install frame and glass panels", courtType:"All", status:"Not Started", owner:"Facility Contractor", dueDate:"2026-07-31", notes:"Depends on foundation cure time"},
+    {category:"Turf & Infill", task:"Install turf and sand infill", courtType:"All", status:"Not Started", owner:"Facility Contractor", dueDate:"2026-08-05", notes:""},
+    {category:"Net Install", task:"Install net and net posts", courtType:"All", status:"Not Started", owner:"Facility Contractor", dueDate:"2026-08-07", notes:""},
+    {category:"Lighting", task:"Install court lighting", courtType:"All", status:"Not Started", owner:"Facility Contractor", dueDate:"2026-08-10", notes:""},
+    {category:"Decoration", task:"Install entrance frame", courtType:"All", status:"Not Started", owner:"Facility Contractor", dueDate:"2026-08-12", notes:""},
+    {category:"Decoration", task:"Install net post protectors", courtType:"All", status:"Not Started", owner:"Facility Contractor", dueDate:"2026-08-12", notes:""},
+    {category:"Decoration", task:"Install net tape", courtType:"All", status:"Not Started", owner:"Facility Contractor", dueDate:"2026-08-12", notes:""},
+    {category:"Decoration", task:"Install banners on fence", courtType:"All", status:"Not Started", owner:"Facility Contractor", dueDate:"2026-08-13", notes:""}
+  ],
+  equipRental: [
+    {item:"Rental Racquets", category:"Rental Racquets", needed:50, inStock:0, supplier:"ODEA", status:"Not Ordered", unitCost:"1,000,000 VND", totalCost:"50,000,000 VND", eta:"30 days", notes:"18K Carbon; need to design racquet face"},
+    {item:"Balls (Can of 3)", category:"Rental Balls", needed:3000, inStock:0, supplier:"ODEA", status:"Not Ordered", unitCost:"80,000 VND", totalCost:"240,000,000 VND", eta:"30 days", notes:"Padel Tour Balls, 47% Wool"},
+    {item:"Ball Baskets", category:"Court Equipment", needed:6, inStock:0, supplier:"ODEA / Decathlon / Shopee", status:"Not Ordered", unitCost:"1,000,000 VND", totalCost:"6,000,000 VND", eta:"30 days", notes:"Cloth tennis cart; capacity 160 balls"},
+    {item:"Ball Pickup Tubes", category:"Court Equipment", needed:10, inStock:0, supplier:"ODEA / Decathlon", status:"Not Ordered", unitCost:"300,000 VND", totalCost:"3,000,000 VND", eta:"30 days", notes:"ABS/PP; capacity 15 balls"},
+    {item:"Glass Cleaning Tools", category:"Court Equipment", needed:5, inStock:0, supplier:"Online", status:"Not Ordered", unitCost:"300,000 VND", totalCost:"1,500,000 VND", eta:"7 days", notes:"Confirm total qty"},
+    {item:"Turf Cleaning Tools", category:"Court Equipment", needed:1, inStock:0, supplier:"Online", status:"Not Ordered", unitCost:"TBD", totalCost:"TBD", eta:"30 days", notes:"Unit price TBD"}
+  ],
+  equipShop: [
+    {item:"Overgrips (pack of 3)", category:"Shop Accessories", needed:100, inStock:0, supplier:"Wilson / Yonex / Babolat", status:"Not Ordered", unitCost:"120,000 VND", totalCost:"12,000,000 VND", eta:"7 days", notes:"Sell for 160,000đ each pack"},
+    {item:"Overgrip (Box of 70)", category:"Shop Accessories", needed:5, inStock:0, supplier:"Babolat", status:"Not Ordered", unitCost:"2,300,000 VND", totalCost:"11,500,000 VND", eta:"7 days", notes:"Sell for 40,000đ each grip"},
+    {item:"Towel", category:"Shop Accessories", needed:500, inStock:0, supplier:"TBD", status:"Not Ordered", unitCost:"TBD", totalCost:"TBD", eta:"TBD", notes:"Microfiber towel"},
+    {item:"Wristband (pack of 2)", category:"Shop Accessories", needed:30, inStock:0, supplier:"Babolat / Wilson / Head", status:"Not Ordered", unitCost:"250,000 VND", totalCost:"7,500,000 VND", eta:"7 days", notes:"Sell for 300,000đ each pack"},
+    {item:"Hat", category:"Shop Accessories", needed:20, inStock:0, supplier:"TBD", status:"Not Ordered", unitCost:"70,000 VND", totalCost:"1,400,000 VND", eta:"7 days", notes:"Sell for 100,000đ each"},
+    {item:"Socks (pack of 3 pairs)", category:"Shop Accessories", needed:20, inStock:0, supplier:"Decathlon / Manufacture", status:"Not Ordered", unitCost:"100,000 VND", totalCost:"2,000,000 VND", eta:"7 days", notes:"Sell for 60,000đ each pack"},
+    {item:"Babolat Technical Viper 3.0", category:"Shop Racquets", needed:5, inStock:0, supplier:"Babolat", status:"Not Ordered", unitCost:"7,349,250 VND", totalCost:"36,746,250 VND", eta:"7 days", notes:"MSRP 9,799,000 VND"},
+    {item:"Babolat Technical Viper Soft 3.0", category:"Shop Racquets", needed:5, inStock:0, supplier:"Babolat", status:"Not Ordered", unitCost:"6,374,250 VND", totalCost:"31,871,250 VND", eta:"7 days", notes:"MSRP 8,499,000 VND"},
+    {item:"Babolat Viper Juan Lebron 3.0", category:"Shop Racquets", needed:2, inStock:0, supplier:"Babolat", status:"Not Ordered", unitCost:"8,099,250 VND", totalCost:"16,198,500 VND", eta:"7 days", notes:"Signature model"},
+    {item:"Babolat Viper Juan Lebron Soft 3.0", category:"Shop Racquets", needed:2, inStock:0, supplier:"Babolat", status:"Not Ordered", unitCost:"8,099,250 VND", totalCost:"16,198,500 VND", eta:"7 days", notes:"Signature model"},
+    {item:"Babolat Air Viper 2.6", category:"Shop Racquets", needed:5, inStock:0, supplier:"Babolat", status:"Not Ordered", unitCost:"6,374,250 VND", totalCost:"31,871,250 VND", eta:"7 days", notes:"MSRP 8,499,000 VND"},
+    {item:"Babolat Counter Viper 2.6", category:"Shop Racquets", needed:5, inStock:0, supplier:"Babolat", status:"Not Ordered", unitCost:"6,374,250 VND", totalCost:"31,871,250 VND", eta:"7 days", notes:"MSRP 8,499,000 VND"},
+    {item:"Babolat Padel Shoes (Various SKUs)", category:"Shop Shoes", needed:20, inStock:0, supplier:"Babolat", status:"Not Ordered", unitCost:"2,625,000 VND", totalCost:"52,500,000 VND", eta:"7 days", notes:"Multiple sizes/SKUs"},
+    {item:"Babolat Bags (Various SKUs)", category:"Shop Bags", needed:8, inStock:0, supplier:"Babolat", status:"Not Ordered", unitCost:"2,774,250 VND", totalCost:"22,194,000 VND", eta:"7 days", notes:"Multiple SKUs"},
+    {item:"Babolat Overgrip (pack of 3)", category:"Shop Accessories", needed:50, inStock:0, supplier:"Babolat", status:"Not Ordered", unitCost:"126,750 VND", totalCost:"6,337,500 VND", eta:"7 days", notes:"MSRP 169,000 VND"},
+    {item:"Babolat Overgrip (pack of 70)", category:"Shop Accessories", needed:5, inStock:0, supplier:"Babolat", status:"Not Ordered", unitCost:"1,724,250 VND", totalCost:"8,621,250 VND", eta:"7 days", notes:"MSRP 2,299,000 VND"},
+    {item:"Babolat Court Padel Ball (x3)", category:"Shop Balls", needed:240, inStock:0, supplier:"Babolat", status:"Not Ordered", unitCost:"111,750 VND", totalCost:"26,820,000 VND", eta:"7 days", notes:"MSRP 149,000 VND"}
+  ],
+  activitiesCalendar: [],
+  dailyChecklist: [
+    {category:"Courts Condition", item:"Clean surface, no sand pile, leaves, trash, etc.", status:"Active", owner:"Court Attendants"},
+    {category:"Courts Condition", item:"No slippery due to water, moisture, uneven sand", status:"Active", owner:"Court Attendants"},
+    {category:"Courts Condition", item:"Nets with correct height, tension, no holes", status:"Active", owner:"Court Attendants"},
+    {category:"Courts Condition", item:"Clean glass", status:"Active", owner:"Court Attendants"},
+    {category:"Courts Condition", item:"Lights all working", status:"Active", owner:"Court Attendants"},
+    {category:"Courts Condition", item:"Clean benches, not broken, no trash (drink/food left behind)", status:"Active", owner:"Court Attendants"},
+    {category:"Courts Condition", item:"Roof no leaking", status:"Active", owner:"Court Attendants"},
+    {category:"Equipment Condition", item:"Rental racquet no crack, no bad smell, no wet grip", status:"Active", owner:"Court Attendants"},
+    {category:"Equipment Condition", item:"Rental ball in good condition, adequate bounce, not dirty", status:"Active", owner:"Court Attendants"},
+    {category:"Equipment Condition", item:"Ball pickup tube not broken, placed at proper spots", status:"Active", owner:"Court Attendants"},
+    {category:"Equipment Condition", item:"Ball basket not broken, contained right amount of balls, correct balls, placed at proper location", status:"Active", owner:"Court Attendants"},
+    {category:"Club Cleanliness", item:"No trash visible anywhere, no bad smell spot", status:"Active", owner:"Cleaning / Facility"},
+    {category:"Club Cleanliness", item:"Toilets, changing rooms smell fresh, clean — clean at least 3x per day", status:"Active", owner:"Cleaning / Facility"},
+    {category:"Club Cleanliness", item:"Toilet with adequate items like toilet paper, soap, etc.", status:"Active", owner:"Cleaning / Facility"},
+    {category:"Club Cleanliness", item:"No cables, tools, messy wires visible", status:"Active", owner:"Cleaning / Facility"},
+    {category:"Club Cleanliness", item:"Reception desk organized, simplified, clean", status:"Active", owner:"Front Desk / Reception"},
+    {category:"Club Cleanliness", item:"Shop shelves items organized", status:"Active", owner:"Pro Shop Staff"},
+    {category:"Front Desk Performance", item:"No booking mistakes", status:"Active", owner:"Front Desk / Reception"},
+    {category:"Front Desk Performance", item:"Minimal waiting time for players", status:"Active", owner:"Front Desk / Reception"},
+    {category:"Front Desk Performance", item:"Staff know prices, programs, promotions, etc.", status:"Active", owner:"Front Desk / Reception"},
+    {category:"Front Desk Performance", item:"Proper and friendly greetings", status:"Active", owner:"Front Desk / Reception"},
+    {category:"Front Desk Performance", item:"Staff can explain basics of the sports, lessons, coaches information", status:"Active", owner:"Front Desk / Reception"},
+    {category:"Front Desk Performance", item:"Precise English communication", status:"Active", owner:"Front Desk / Reception"},
+    {category:"Front Desk Performance", item:"Precise price/lesson quote", status:"Active", owner:"Front Desk / Reception"},
+    {category:"Front Desk Performance", item:"Comprehend what's happening inside the courts", status:"Active", owner:"Front Desk / Reception"}
+  ],
+  maintenance: [
+    {task:"Draft court maintenance SOP (turf care, glass cleaning, net/fixture inspection schedule)", category:"Maintenance", status:"Not Started", owner:"Johnny", dueDate:"2026-08-08", notes:"Needed before opening"}
+  ],
+  coachStaff: [
+    {tier:"Head Coach", role:"Head Coach (General)", headcount:0, empType:"Full-time/Contractor", comp:"25,000,000–30,000,000 VND/mo (mid 27.5M)", status:"Not Started", assigned:"", timeline:"", notes:"Cross-sport coordination"},
+    {tier:"Head Coach", role:"Head Coach (Padel)", headcount:1, empType:"Full-time", comp:"30,000,000 VND/mo", status:"Not Started", assigned:"", timeline:"Jul Recruit → Aug Onboard+Training", notes:""},
+    {tier:"Coach", role:"Padel Coaches", headcount:3, empType:"Contractor", comp:"60/40 session split", status:"JD in Prep", assigned:"", timeline:"Jul Recruit → Aug Onboard+Training", notes:"Per-session revenue split"},
+    {tier:"Coach", role:"Pickleball Coaches", headcount:3, empType:"Contractor", comp:"60/40 session split", status:"JD in Prep", assigned:"", timeline:"Jul Recruit → Aug Onboard+Training", notes:""},
+    {tier:"Coach", role:"Tennis Coaches", headcount:2, empType:"Contractor", comp:"60/40 session split", status:"JD in Prep", assigned:"", timeline:"Jul Recruit → Aug Onboard+Training", notes:""},
+    {tier:"Assistant Coach", role:"Social Host (Pickleball)", headcount:2, empType:"Contractor", comp:"50/50 split", status:"Not Started", assigned:"", timeline:"", notes:""},
+    {tier:"Assistant Coach", role:"Social Host (Tennis)", headcount:1, empType:"Contractor", comp:"50/50 split", status:"In Talks", assigned:"", timeline:"", notes:""}
+  ],
+  coachPipeline: [
+    {name:"Nguyen Van A", sport:"Padel", level:"Advanced", contact:"+84 90 xxx xxxx", rate:"70/30 rev-share", status:"Interviewing", nextStep:"Trial session scheduled", lastContact:"2026-07-15"}
+  ],
+  coachTasks: [
+    {task:"Finalize coach compensation policy (rev-share vs hourly)", category:"Policy", status:"In Progress", owner:"Johnny", dueDate:"2026-07-25", notes:"Draft v2 circulated"}
+  ],
+  mktStaff: [
+    {role:"Marketing Manager", headcount:0, empType:"Contractor (proposed)", comp:"TBD", status:"Not Started", assigned:"", timeline:"", notes:"Considering outsourcing instead of hiring"},
+    {role:"Community Manager", headcount:1, empType:"Full-time", comp:"20,000,000–30,000,000 VND/mo (mid 25M)", status:"In Talks", assigned:"", timeline:"", notes:"Padel-focused"},
+    {role:"Sales/Marketing Executive (Content)", headcount:1, empType:"Full-time", comp:"16,000,000–20,000,000 VND/mo (mid 18M)", status:"JD in Prep", assigned:"", timeline:"Jul Recruit → Aug Onboard+Training", notes:"Reports to Assistant Manager"},
+    {role:"Marketing Agency", headcount:1, empType:"Contractor", comp:"TBD", status:"In Talks", assigned:"", timeline:"", notes:"External agency partner"}
+  ],
+  marketingAccounts: [
+    {platform:"Instagram", handle:"@spinlabhcmc", status:"Done", owner:"Johnny", notes:"Bio + highlight covers done; posting cadence TBD"}
+  ],
+  marketingPlan: [
+    {task:"Finalize brand book v2 (palette, type, voice)", category:"Brand Book", status:"In Progress", owner:"Johnny", dueDate:"2026-07-30"}
+  ],
+  contentPlan: [
+    {date:"Week of Jul 21", platform:"Instagram + TikTok", contentType:"Reel", topic:"Behind-the-scenes: court install progress", status:"Not Started"}
+  ],
+  partnerships: [
+    {sector:"Facility Operations", category:"Court Infrastructure", provider:"TBD", dealStructure:"One-time purchase + maintenance contract", status:"Prospecting", priority:"High", nextAction:"Shortlist 2–3 suppliers for quote comparison", dueDate:"2026-06-15", notes:"FIP/Premier Padel standards required"},
+    {sector:"Facility Operations", category:"Rental Racquet, Ball & Court Equipment", provider:"TBD", dealStructure:"One-time purchase + maintenance contract", status:"Closing", priority:"", nextAction:"Order", dueDate:"", notes:"Priority left blank (source had duplicate of Status)"},
+    {sector:"Facility Operations", category:"Cleaning & Janitorial", provider:"TBD", dealStructure:"Service contract — monthly retainer", status:"Prospecting", priority:"High", nextAction:"Issue RFQ to 3 cleaning companies", dueDate:"2026-06-15", notes:"Headcount: 2–3 janitors per shift"},
+    {sector:"Facility Operations", category:"Laundry & Linen Services", provider:"Sora", dealStructure:"Rev-share: 80% Sora / 20% SpinLab; B2B towel annex TBD", status:"Closing", priority:"High", nextAction:"Finalise attribution window & SLA gaps; negotiate B2B towel annex", dueDate:"2026-06-25", notes:"Flag: attribution window, SLA, B2B annex open"},
+    {sector:"Facility Operations", category:"Security", provider:"", dealStructure:"", status:"Prospecting", priority:"", nextAction:"", dueDate:"", notes:""},
+    {sector:"Facility Operations", category:"Green Landscaping", provider:"", dealStructure:"", status:"Prospecting", priority:"", nextAction:"", dueDate:"", notes:""},
+    {sector:"Facility Operations", category:"Guest Towels", provider:"DNS Global / Welcron", dealStructure:"", status:"Prospecting", priority:"High", nextAction:"", dueDate:"", notes:""},
+    {sector:"Wellness & Recovery", category:"Cold Therapy / Hydrotherapy", provider:"ARCA", dealStructure:"Purchase / lease TBD", status:"Closing", priority:"Critical", nextAction:"Finalise pricing & install schedule", dueDate:"2026-06-30", notes:"Grand opening dependency — must be operational Day 1"},
+    {sector:"Wellness & Recovery", category:"Physiotherapy & Rehabilitation", provider:"RTD Rehab", dealStructure:"Rev-share: 80% SpinLab / 20% RTD; 2-yr term; 24-mo attribution", status:"Closing", priority:"Critical", nextAction:"Execute partnership agreement", dueDate:"2026-06-20", notes:"RTD responsible for full fit-out"},
+    {sector:"Food & Beverage", category:"Alcohol — Beers", provider:"Belgo", dealStructure:"Direct supply w/ discount; fridge + cooling system supplied", status:"Prospecting", priority:"High", nextAction:"Purchasing", dueDate:"1 week before opening", notes:"Consider co-branding with sports nutrition brand"},
+    {sector:"Food & Beverage", category:"Alcohol — Wine", provider:"Parcelles", dealStructure:"Direct supply w/ discount; fridge + cooling system supplied", status:"Prospecting", priority:"High", nextAction:"Wine testing, demo, pricing", dueDate:"2 weeks before opening", notes:""},
+    {sector:"Food & Beverage", category:"Sport Drinks", provider:"Pocari / Revive", dealStructure:"Sponsorship", status:"Prospecting", priority:"High", nextAction:"Sending proposal", dueDate:"", notes:""},
+    {sector:"Food & Beverage", category:"Alcohol — Beers", provider:"Heineken", dealStructure:"", status:"Not Set", priority:"", nextAction:"", dueDate:"", notes:"Early-stage lead; not counted in pipeline totals"},
+    {sector:"Sport Equipment", category:"Equipment & Apparel", provider:"Osaka World", dealStructure:"Sponsorship-in-kind; ~30% wholesale pricing; 0% pro-shop commission", status:"In Negotiation", priority:"Critical", nextAction:"Await Osaka World response to proposal; schedule site visit", dueDate:"", notes:"Negotiation-ready proposal delivered Apr 2026"},
+    {sector:"Legal & Compliance", category:"Insurance", provider:"TBD", dealStructure:"Annual premium", status:"Prospecting", priority:"Critical", nextAction:"Engage insurance broker; obtain quotes", dueDate:"2026-06-15", notes:"Required before grand opening"},
+    {sector:"Partnerships & Memberships", category:"Governing Body / Federation", provider:"Vietnam Tennis Federation (VTF)", dealStructure:"MOU / Cooperation agreement; hosting fee TBD", status:"In Negotiation", priority:"High", nextAction:"Confirm tournament calendar and formal MOU execution", dueDate:"2026-06-30", notes:"Referenced in Osaka World proposal as key credential"}
+  ]
+};
+
+// ---- Activities Calendar data (92 rows) ----
+var QUARTER_MONTHS = {Q1:["Aug 2026","Sep 2026","Oct 2026"], Q2:["Nov 2026","Dec 2026","Jan 2027"], Q3:["Feb 2027","Mar 2027","Apr 2027"], Q4:["May 2027","Jun 2027","Jul 2027"]};
+var ACTIVITY_ROWS_RAW = [
+  ["Q1",1,1,"Basic Activities","Soft Opening"],["Q1",1,1,"Basic Activities","Grand Opening"],
+  ["Q1",1,3,"Basic Activities","New Players (Open Day) — recurring"],["Q1",2,2,"Basic Activities","1st Tournament"],
+  ["Q1",3,3,"Basic Activities","2nd Tournament"],["Q1",1,3,"Basic Activities","Social Americano — recurring"],
+  ["Q1",2,3,"Basic Activities","Group & Private Classes"],["Q1",2,2,"Appearances","Corporate Demo Day"],
+  ["Q1",3,3,"Appearances","Charity & Community Event"],["Q1",3,3,"Appearances","[Online] Instruction Videos"],
+  ["Q1",2,2,"Specials","Quarter Topup Promotion"],["Q1",3,3,"Specials","Achievement Unlock Play"],
+  ["Q1",2,3,"Specials","[Club Team] Recruit & Training"],["Q1",2,2,"Specials","[Weekly] King of the Court"],
+  ["Q1",3,3,"Specials","[Weekly] Challenge the Coach"],["Q1",2,2,"Specials","[Weekly] Marathon Padel"],
+  ["Q1",3,3,"Specials","[Weekly] Padel Roulette"],["Q1",2,2,"Specials","[Tournament] Team Relay Cup"],
+  ["Q2",1,3,"Basic Activities","New Players (Open Day) — recurring"],["Q2",1,1,"Basic Activities","3rd Tournament"],
+  ["Q2",2,2,"Basic Activities","4th Tournament"],["Q2",3,3,"Basic Activities","5th Tournament"],
+  ["Q2",1,3,"Basic Activities","Social Americano — recurring"],["Q2",1,3,"Basic Activities","Group & Private Classes — recurring"],
+  ["Q2",1,3,"Appearances","Corporate Demo Day — recurring"],["Q2",1,3,"Appearances","Charity & Community Event — recurring"],
+  ["Q2",1,3,"Appearances","[Online] Instruction Videos — recurring"],["Q2",1,1,"Specials","Seasonal Promotion"],
+  ["Q2",2,2,"Specials","Quarter Topup Promotion"],["Q2",3,3,"Specials","Achievement Unlock Play"],
+  ["Q2",1,3,"Specials","[Club Team] Recruit & Training — recurring"],["Q2",1,1,"Specials","[Weekly] Padel Olympics"],
+  ["Q2",2,2,"Specials","[Weekly] Handicap Padel"],["Q2",3,3,"Specials","[Weekly] Padel Roulette"],
+  ["Q2",1,1,"Specials","[Tournament] Nation Cup"],["Q2",3,3,"Specials","[Tournament] The Battlefield"],
+  ["Q2",2,2,"Specials","[Weekly] Marathon Padel"],["Q2",3,3,"Specials","[Weekly] King of the Court"],
+  ["Q2",2,2,"Specials","[Tournament] VN Padel Club Competition"],["Q2",1,1,"Specials","[Kids] Seasonal Playground for Kids"],
+  ["Q2",2,3,"Specials","[Kids] After School Games"],
+  ["Q3",1,3,"Basic Activities","New Players (Open Day) — recurring"],["Q3",1,1,"Basic Activities","6th Tournament"],
+  ["Q3",2,2,"Basic Activities","7th Tournament"],["Q3",3,3,"Basic Activities","8th Tournament"],
+  ["Q3",1,3,"Basic Activities","Social Americano — recurring"],["Q3",1,3,"Basic Activities","Group & Private Classes — recurring"],
+  ["Q3",1,3,"Appearances","Corporate Demo Day — recurring"],["Q3",1,3,"Appearances","Charity & Community Event — recurring"],
+  ["Q3",1,3,"Appearances","[Online] Instruction Videos — recurring"],["Q3",1,1,"Specials","Seasonal Promotion"],
+  ["Q3",2,2,"Specials","Quarter Topup Promotion"],["Q3",3,3,"Specials","Achievement Unlock Play"],
+  ["Q3",1,1,"Specials","[Club Team] Invitation Competition"],["Q3",2,2,"Specials","[Club Team] Training"],
+  ["Q3",3,3,"Specials","[Club Team] Invitation Competition"],["Q3",1,1,"Specials","[Weekly] Tie-Break Sudden Death"],
+  ["Q3",2,2,"Specials","[Weekly] Challenge the Coach"],["Q3",3,3,"Specials","[Weekly] Padel Roulette"],
+  ["Q3",3,3,"Specials","[Tournament] Tennis & Pickleball Coach Cup"],["Q3",1,1,"Specials","[Weekly] Padel Olympics"],
+  ["Q3",2,2,"Specials","[Weekly] Marathon Padel"],["Q3",3,3,"Specials","[Weekly] King of the Court"],
+  ["Q3",2,2,"Specials","[Tournament] VN Padel Club Competition"],["Q3",3,3,"Specials","[Tournament] Company Cup"],
+  ["Q3",1,1,"Specials","[Kids] Seasonal Playground for Kids"],["Q3",2,3,"Specials","[Kids] After School Games"],
+  ["Q4",1,3,"Basic Activities","New Players (Open Day) — recurring"],["Q4",1,1,"Basic Activities","9th Tournament"],
+  ["Q4",2,2,"Basic Activities","10th Tournament"],["Q4",3,3,"Basic Activities","Masters Cup"],
+  ["Q4",1,3,"Basic Activities","Social Americano — recurring"],["Q4",1,3,"Basic Activities","Group & Private Classes — recurring"],
+  ["Q4",1,3,"Appearances","Corporate Demo Day — recurring"],["Q4",1,3,"Appearances","Charity & Community Event — recurring"],
+  ["Q4",1,3,"Appearances","[Online] Instruction Videos — recurring"],["Q4",1,1,"Specials","Seasonal Promotion"],
+  ["Q4",2,2,"Specials","Quarter Topup Promotion"],["Q4",3,3,"Specials","Achievement Unlock Play"],
+  ["Q4",1,1,"Specials","[Club Team] Invitation Competition"],["Q4",2,2,"Specials","[Club Team] Training"],
+  ["Q4",3,3,"Specials","[Club Team] Invitation Competition"],["Q4",1,1,"Specials","[Weekly] Tie-Break Sudden Death"],
+  ["Q4",2,2,"Specials","[Weekly] Challenge the Coach"],["Q4",3,3,"Specials","[Weekly] Padel Roulette"],
+  ["Q4",3,3,"Specials","[Tournament] Triathlon Padel x Tennis x Pickle"],["Q4",1,1,"Specials","[Weekly] Padel Olympics"],
+  ["Q4",2,2,"Specials","[Weekly] Marathon Padel"],["Q4",3,3,"Specials","[Weekly] King of the Court"],
+  ["Q4",2,2,"Specials","[Tournament] VN Padel Club Competition"],["Q4",1,1,"Specials","[Kids] Seasonal Playground for Kids"],
+  ["Q4",2,3,"Specials","[Kids] After School Games"]
+];
+function monthLabel(m1,m2){ return m1===m2 ? ("M"+m1) : ("M"+m1+"–M"+m2); }
+function monthRangeStr(q,m1,m2){ var months=QUARTER_MONTHS[q]; return m1===m2 ? months[m1-1] : (months[m1-1]+"–"+months[m2-1]); }
+ACTIVITY_ROWS_RAW.forEach(function(r){
+  data.activitiesCalendar.push({quarter:r[0], monthLabel:monthLabel(r[1],r[2]), approxMonth:monthRangeStr(r[0],r[1],r[2]), category:r[3], activity:r[4], status:"Planned"});
+});
+
+// ================= Tab map (dataKey -> Google Sheet tab name) =================
+var TAB_MAP = {
+  opsStaff:"Operations_Staff", courtOps:"Operations_Court", equipRental:"Operations_Equip_Rental",
+  equipShop:"Operations_Equip_Shop", activitiesCalendar:"Operations_Activities", dailyChecklist:"Operations_DailyChecklist",
+  maintenance:"Operations_Maintenance", coachStaff:"Coaching_Staff", coachPipeline:"Coaching_Pipeline",
+  coachTasks:"Coaching_Schedule", mktStaff:"Marketing_Staff", marketingAccounts:"Marketing_Accounts",
+  marketingPlan:"Marketing_Plan", contentPlan:"Marketing_Content", partnerships:"Partnerships"
+};
+
+// ================= Status vocab & chip mapping =================
+var STATUS_CLASS_MAP = {
+  "Hired":"done","Done":"done","Signed":"done","In Stock":"done","Received":"done","Active":"done","Confirmed":"done",
+  "In Progress":"progress","JD in Prep":"progress","Recruiting":"progress","In Talks":"progress","Offer Sent":"progress",
+  "Interviewing":"progress","Contacted":"progress","Ordered":"progress","In Transit":"progress","Closing":"progress",
+  "In Negotiation":"progress","Planned":"progress","Needs Details":"progress","Draft":"progress",
+  "Not Started":"notstarted","Open":"notstarted","Prospecting":"notstarted","Not Ordered":"notstarted",
+  "Outsourcing - Get Quote":"notstarted","Not Set":"notstarted","Retired":"notstarted","":"notstarted",
+  "Blocked":"blocked","On Hold":"blocked","Cancelled":"blocked","Declined":"blocked","Dead":"blocked"
+};
+function chipClassFor(status){ return STATUS_CLASS_MAP[status] || "notstarted"; }
+
+var STAFF_STATUS_OPTIONS = ["Not Started","JD in Prep","Recruiting","In Talks","Offer Sent","Hired","Outsourcing - Get Quote","On Hold"];
+var GENERIC_STATUS_OPTIONS = ["Not Started","In Progress","Done","Blocked"];
+var EQUIP_STATUS_OPTIONS = ["Not Ordered","Ordered","In Transit","In Stock","Backordered"];
+var PIPELINE_STATUS_OPTIONS = ["Prospecting","Contacted","Interviewing","Offer Sent","Signed","Declined"];
+var DAILY_STATUS_OPTIONS = ["Active","Draft","Retired"];
+var ACTIVITY_STATUS_OPTIONS = ["Planned","Needs Details","Confirmed","Cancelled"];
+var ACCOUNTS_STATUS_OPTIONS = ["Not Started","In Progress","Done"];
+var PARTNER_STATUS_OPTIONS = ["Prospecting","Closing","In Negotiation","Signed","On Hold","Dead","Not Set"];
+var PARTNER_PRIORITY_OPTIONS = ["","Critical","High","Medium","Low"];
+
+var isHired = function(x){ return x.status === "Hired"; };
+var isDone = function(x){ return x.status === "Done"; };
+var isSigned = function(x){ return x.status === "Signed"; };
+var isStocked = function(x){ return x.status === "In Stock" || x.status === "Received"; };
+var isActive = function(x){ return x.status === "Active"; };
+var isConfirmed = function(x){ return x.status === "Confirmed"; };
+var isAccountDone = function(x){ return x.status === "Done"; };
+
+function statsFor(list, doneCheck){
+  var total = list.length;
+  var done = list.filter(doneCheck).length;
+  return {total:total, done:done, pct: total ? Math.round((done/total)*100) : 0};
+}
+function byField(list, field, value){ return list.filter(function(x){ return x[field] === value; }); }
+
+// ================= Sync engine =================
+// Default Web App URL — baked in so you don't need to paste it in every time.
+// You can still override it anytime via Sync Settings, or with a ?webapp=... link.
+var DEFAULT_SYNC_URL = "https://script.google.com/macros/s/AKfycbwdjTmJIOHLqMIEi9Nq_dsqLW9Zkf-yCAPYJOOIuyjhEZa_UEq3Co8Qypdypcg_9l_p/exec";
+var SYNC_URL = new URLSearchParams(location.search).get('webapp') || DEFAULT_SYNC_URL;
+var AUTO_SYNC = true;
+
+function setSyncStatus(text, kind){
+  var el = document.getElementById('syncStatus');
+  el.textContent = text;
+  el.className = 'status' + (kind ? ' ' + kind : '');
+}
+document.getElementById('webappUrlInput').value = SYNC_URL;
+setSyncStatus(SYNC_URL ? 'Connected. Click Refresh to pull the latest from Google Sheets.' : 'Not connected to Google Sheets.', SYNC_URL ? 'ok' : '');
+
+function pullAll(){
+  if (!SYNC_URL) { setSyncStatus('No Web App URL set — open Sync Settings first.', 'err'); return; }
+  setSyncStatus('Refreshing from Google Sheets…');
+  fetch(SYNC_URL).then(function(r){ return r.json(); }).then(function(json){
+    Object.keys(TAB_MAP).forEach(function(key){
+      var tab = TAB_MAP[key];
+      if (json[tab]) data[key] = json[tab];
+    });
+    renderApp();
+    setSyncStatus('Synced just now.', 'ok');
+  }).catch(function(err){
+    setSyncStatus('Refresh failed: ' + err + ' (check the URL and that the script is deployed for "Anyone").', 'err');
+  });
+}
+
+function pushTab(dataKey){
+  if (!SYNC_URL) return Promise.resolve();
+  var tab = TAB_MAP[dataKey];
+  return fetch(SYNC_URL, {
+    method: 'POST',
+    headers: {'Content-Type': 'text/plain;charset=utf-8'},
+    body: JSON.stringify({action:'replaceAll', sheet: tab, rows: data[dataKey]})
+  }).then(function(r){ return r.json(); }).then(function(res){
+    if (res.status !== 'ok') throw new Error(res.message || 'unknown error');
+    return res;
+  });
+}
+
+function pushAll(){
+  if (!SYNC_URL) { setSyncStatus('No Web App URL set — open Sync Settings first.', 'err'); return; }
+  setSyncStatus('Pushing all tabs to Google Sheets…');
+  var keys = Object.keys(TAB_MAP);
+  var chain = Promise.resolve();
+  keys.forEach(function(k){ chain = chain.then(function(){ return pushTab(k); }); });
+  chain.then(function(){
+    setSyncStatus('All tabs pushed to Google Sheets.', 'ok');
+  }).catch(function(err){
+    setSyncStatus('Push failed: ' + err, 'err');
+  });
+}
+
+function autoPush(dataKey){
+  if (!AUTO_SYNC || !SYNC_URL) return;
+  setSyncStatus('Saving to Google Sheets…');
+  pushTab(dataKey).then(function(){
+    setSyncStatus('Saved to Google Sheets.', 'ok');
+  }).catch(function(err){
+    setSyncStatus('Auto-save failed: ' + err + ' — use Push All to retry.', 'err');
+  });
+}
+
+document.getElementById('btnRefresh').addEventListener('click', pullAll);
+document.getElementById('btnPushAll').addEventListener('click', pushAll);
+document.getElementById('btnSettings').addEventListener('click', function(){
+  document.getElementById('settingsPanel').classList.toggle('open');
+});
+document.getElementById('btnSaveUrl').addEventListener('click', function(){
+  var v = document.getElementById('webappUrlInput').value.trim();
+  SYNC_URL = v;
+  var msg = document.getElementById('settingsMsg');
+  if (!v) {
+    msg.textContent = 'Cleared.';
+    setSyncStatus('Not connected to Google Sheets.', '');
+    return;
+  }
+  // Best-effort: try to reflect the URL in the address bar so a bookmark would capture it.
+  // Browsers block this for file:// pages (opened directly, without a local server), so we
+  // skip the attempt entirely there rather than trying and warning about it.
+  if (location.protocol !== 'file:') {
+    try {
+      var url = new URL(location.href);
+      url.searchParams.set('webapp', v);
+      history.replaceState(null, '', url.toString());
+    } catch (err) {
+      // Some non-file:// contexts (e.g. sandboxed viewers) can still block this — safe to ignore.
+    }
+  }
+  var bookmarkUrl = location.href.split('?')[0] + '?webapp=' + encodeURIComponent(v);
+  msg.innerHTML = 'Connected for this session.<br>To reopen with this URL already filled in next time, copy this link (click to select) and save it as a bookmark:'
+    + '<br><input type="text" readonly value="' + bookmarkUrl.replace(/&/g,'&amp;').replace(/"/g,'&quot;') + '" '
+    + 'style="width:100%;margin-top:6px;padding:7px 8px;font-size:11px;border:1px solid var(--line);border-radius:6px;" '
+    + 'onclick="this.select()">';
+  setSyncStatus('Connected. Click Refresh to pull data.', 'ok');
+});
+document.getElementById('btnTestConn').addEventListener('click', function(){
+  var v = document.getElementById('webappUrlInput').value.trim();
+  if (!v) { document.getElementById('settingsMsg').textContent = 'Enter a URL first.'; return; }
+  document.getElementById('settingsMsg').textContent = 'Testing…';
+  fetch(v).then(function(r){ return r.json(); }).then(function(json){
+    document.getElementById('settingsMsg').textContent = 'Connected! Found tabs: ' + Object.keys(json).join(', ');
+  }).catch(function(err){
+    document.getElementById('settingsMsg').textContent = 'Connection failed: ' + err;
+  });
+});
+document.getElementById('autoSyncToggle').addEventListener('change', function(e){ AUTO_SYNC = e.target.checked; });
+
+// ================= Mobile slide-in nav =================
+function openMobileNav(){
+  document.getElementById('sidebar').classList.add('open');
+  document.getElementById('sidebarBackdrop').classList.add('open');
+}
+function closeMobileNav(){
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebarBackdrop').classList.remove('open');
+}
+document.getElementById('btnHamburger').addEventListener('click', openMobileNav);
+document.getElementById('sidebarBackdrop').addEventListener('click', closeMobileNav);
+
+// ================= Editable table factory =================
+var allTableModules = [];
+
+function chip(status){ return '<span class="chip ' + chipClassFor(status) + '">' + (status || '(none)') + '</span>'; }
+
+function makeEditableTable(containerId, metaId, dataKey, filterFn, columns, doneCheck, newRowDefaults){
+  var editingIndex = null; // index within the filtered view
+  var adding = false;
+
+  function getList(){ return filterFn ? filterFn(data[dataKey]) : data[dataKey]; }
+
+  function render(){
+    var list = getList();
+    if (metaId) {
+      var s = statsFor(list, doneCheck);
+      var el = document.getElementById(metaId);
+      if (el) el.textContent = s.done + ' of ' + s.total + ' complete (' + s.pct + '%)';
+    }
+    var container = document.getElementById(containerId);
+    var html = '';
+    if (!list.length && !adding) {
+      html = '<div class="placeholder">No items yet.</div>';
+    } else {
+      html += '<table class="data"><thead><tr>';
+      columns.forEach(function(col){ html += '<th' + (col.width ? ' style="width:' + col.width + '"' : '') + '>' + col.label + '</th>'; });
+      html += '<th class="actions-col"></th></tr></thead><tbody>';
+      list.forEach(function(row, idx){
+        if (idx === editingIndex) {
+          html += renderEditRow(row, idx, columns);
+        } else {
+          html += '<tr>';
+          columns.forEach(function(col){
+            var val = row[col.key] === undefined ? '' : row[col.key];
+            if (col.key === 'status' || col.key === 'priority' && false) { /* handled below */ }
+            var cellContent = (col.key === 'status') ? chip(val) : escapeHtml(String(val));
+            html += '<td' + (col.meta ? ' class="meta-col"' : '') + '>' + cellContent + '</td>';
+          });
+          html += '<td class="actions">'
+            + '<button class="btn small" data-act="edit" data-idx="' + idx + '">Edit</button> '
+            + '<button class="btn small danger" data-act="delete" data-idx="' + idx + '">Delete</button>'
+            + '</td></tr>';
+        }
+      });
+      if (adding) {
+        html += renderEditRow(Object.assign({}, newRowDefaults || {}), -1, columns);
+      }
+      html += '</tbody></table>';
+      html = '<div class="table-scroll">' + html + '</div>';
+    }
+    html += '<button class="btn small" data-act="add">+ Add row</button>';
+    container.innerHTML = html;
+
+    container.querySelectorAll('[data-act="edit"]').forEach(function(btn){
+      btn.addEventListener('click', function(){ editingIndex = parseInt(btn.getAttribute('data-idx'), 10); adding = false; render(); });
+    });
+    container.querySelectorAll('[data-act="delete"]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        if (!confirm('Delete this row?')) return;
+        var idx = parseInt(btn.getAttribute('data-idx'), 10);
+        var obj = getList()[idx];
+        var fullArr = data[dataKey];
+        var fi = fullArr.indexOf(obj);
+        if (fi > -1) fullArr.splice(fi, 1);
+        refreshEverything();
+        autoPush(dataKey);
+      });
+    });
+    var addBtn = container.querySelector('[data-act="add"]');
+    if (addBtn) addBtn.addEventListener('click', function(){ adding = true; editingIndex = null; render(); });
+
+    container.querySelectorAll('[data-act="save"]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var idx = parseInt(btn.getAttribute('data-idx'), 10);
+        var rowEl = btn.closest('tr');
+        var newObj = {};
+        columns.forEach(function(col){
+          var input = rowEl.querySelector('[data-field="' + col.key + '"]');
+          var v = input ? input.value : '';
+          if (col.type === 'number') v = v === '' ? '' : Number(v);
+          newObj[col.key] = v;
+        });
+        if (idx === -1) {
+          Object.assign(newObj, newRowDefaults || {});
+          columns.forEach(function(col){
+            var input = rowEl.querySelector('[data-field="' + col.key + '"]');
+            if (input) { var v = input.value; if (col.type === 'number') v = v === '' ? '' : Number(v); newObj[col.key] = v; }
+          });
+          data[dataKey].push(newObj);
+          adding = false;
+        } else {
+          var obj = getList()[idx];
+          Object.keys(newObj).forEach(function(k){ obj[k] = newObj[k]; });
+          editingIndex = null;
+        }
+        refreshEverything();
+        autoPush(dataKey);
+      });
+    });
+    container.querySelectorAll('[data-act="cancel"]').forEach(function(btn){
+      btn.addEventListener('click', function(){ editingIndex = null; adding = false; render(); });
+    });
+  }
+
+  function renderEditRow(row, idx, columns){
+    var html = '<tr>';
+    columns.forEach(function(col){
+      var val = row[col.key] === undefined ? '' : row[col.key];
+      html += '<td>';
+      if (col.type === 'select') {
+        html += '<select class="cell-input" data-field="' + col.key + '">';
+        col.options.forEach(function(opt){
+          html += '<option value="' + escapeHtml(opt) + '"' + (opt === val ? ' selected' : '') + '>' + (opt === '' ? '(none)' : escapeHtml(opt)) + '</option>';
+        });
+        html += '</select>';
+      } else {
+        html += '<input class="cell-input" data-field="' + col.key + '" type="' + (col.type === 'number' ? 'number' : 'text') + '" value="' + escapeHtml(String(val)) + '">';
+      }
+      html += '</td>';
+    });
+    html += '<td class="actions">'
+      + '<button class="btn small primary" data-act="save" data-idx="' + idx + '">Save</button> '
+      + '<button class="btn small" data-act="cancel" data-idx="' + idx + '">Cancel</button>'
+      + '</td></tr>';
+    return html;
+  }
+
+  var mod = { render: render };
+  allTableModules.push(mod);
+  return mod;
+}
+
+function escapeHtml(s){
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function refreshEverything(){
+  allTableModules.forEach(function(m){ m.render(); });
+  refreshSidebarAndOverview();
+}
+
+// ================= Subpages / nav model =================
+var STAFF_COLS = [
+  {key:'role', label:'Role', width:'22%'}, {key:'headcount', label:'HC', type:'number', width:'6%'}, {key:'empType', label:'Employment Type', width:'13%'},
+  {key:'comp', label:'Compensation', width:'16%'}, {key:'status', label:'Status', type:'select', options:STAFF_STATUS_OPTIONS, width:'11%'},
+  {key:'assigned', label:'Assigned To', width:'12%'}, {key:'timeline', label:'Target Timeline', meta:true, width:'12%'}, {key:'notes', label:'Notes', meta:true, width:'8%'}
+];
+
+var pillars = [
+  {key:"operations", label:"Operations"},
+  {key:"coaching", label:"Coaching"},
+  {key:"marketing", label:"Marketing"}
+];
+
+var subpageDefs = [
+  {key:"operations-staff", pillar:"operations", label:"Staff", dataKey:"opsStaff", doneCheck:isHired},
+  {key:"operations-court", pillar:"operations", label:"Court", dataKey:"courtOps", doneCheck:isDone},
+  {key:"operations-equipment", pillar:"operations", label:"Equipment", combine:["equipRental","equipShop"], doneCheck:isStocked},
+  {key:"operations-activities", pillar:"operations", label:"Activities Calendar", dataKey:"activitiesCalendar", doneCheck:isConfirmed},
+  {key:"operations-dailychecklist", pillar:"operations", label:"Daily Checklist", dataKey:"dailyChecklist", doneCheck:isActive},
+  {key:"operations-maintenance", pillar:"operations", label:"Maintenance", dataKey:"maintenance", doneCheck:isDone},
+  {key:"coaching-headcoach", pillar:"coaching", label:"Head Coach", dataKey:"coachStaff", filter:function(l){return byField(l,"tier","Head Coach");}, doneCheck:isHired},
+  {key:"coaching-coach", pillar:"coaching", label:"Coach", dataKey:"coachStaff", filter:function(l){return byField(l,"tier","Coach");}, doneCheck:isHired},
+  {key:"coaching-assistantcoach", pillar:"coaching", label:"Assistant Coach", dataKey:"coachStaff", filter:function(l){return byField(l,"tier","Assistant Coach");}, doneCheck:isHired},
+  {key:"coaching-pipeline", pillar:"coaching", label:"Pipeline", dataKey:"coachPipeline", doneCheck:isSigned},
+  {key:"coaching-schedule", pillar:"coaching", label:"Schedule", dataKey:"coachTasks", doneCheck:isDone},
+  {key:"marketing-staff", pillar:"marketing", label:"Staff", dataKey:"mktStaff", doneCheck:isHired},
+  {key:"marketing-accounts", pillar:"marketing", label:"Accounts", dataKey:"marketingAccounts", doneCheck:isAccountDone},
+  {key:"marketing-plan", pillar:"marketing", label:"Plan", dataKey:"marketingPlan", doneCheck:isDone},
+  {key:"marketing-content", pillar:"marketing", label:"Content", dataKey:"contentPlan", doneCheck:isDone}
+];
+
+function subpageStats(sp){
+  var list;
+  if (sp.combine) { list = []; sp.combine.forEach(function(k){ list = list.concat(data[k]); }); }
+  else if (sp.filter) { list = sp.filter(data[sp.dataKey]); }
+  else { list = data[sp.dataKey]; }
+  return statsFor(list, sp.doneCheck);
+}
+var partnershipsDoneCheck = isSigned;
+function partnershipsStats(){ return statsFor(data.partnerships, partnershipsDoneCheck); }
+
+function pillarStats(pillarKey){
+  var subset = subpageDefs.filter(function(sp){ return sp.pillar === pillarKey; });
+  var total = 0, done = 0;
+  subset.forEach(function(sp){ var s = subpageStats(sp); total += s.total; done += s.done; });
+  return {total:total, done:done, pct: total ? Math.round((done/total)*100) : 0};
+}
+
+function buildSidebar(){
+  var navHtml = '<div class="navitem" data-page="overview"><span class="dot"></span><span>Overview</span></div>';
+  pillars.forEach(function(p){
+    var ps = pillarStats(p.key);
+    var children = subpageDefs.filter(function(sp){ return sp.pillar === p.key; });
+    navHtml += '<div class="navgroup" data-pillar="' + p.key + '">'
+      + '<div class="navgroup-header"><span class="dot"></span><span>' + p.label + '</span><span class="pct">' + ps.pct + '%</span><span class="chevron">&#9662;</span></div>'
+      + '<div class="navchildren">'
+      + children.map(function(sp){
+          var s = subpageStats(sp);
+          return '<div class="navchild" data-page="' + sp.key + '">' + sp.label + '<span class="pct">' + s.pct + '%</span></div>';
+        }).join('')
+      + '</div></div>';
+  });
+  var ps2 = partnershipsStats();
+  navHtml += '<div class="navitem" data-page="partnerships"><span class="dot"></span><span>Partnerships</span><span class="pct">' + ps2.pct + '%</span></div>';
+  document.getElementById('navlist').innerHTML = navHtml;
+
+  document.querySelectorAll('.navitem').forEach(function(el){
+    el.addEventListener('click', function(){ showPage(el.getAttribute('data-page')); });
+  });
+  document.querySelectorAll('.navchild').forEach(function(el){
+    el.addEventListener('click', function(){ showPage(el.getAttribute('data-page')); });
+  });
+  document.querySelectorAll('.navgroup-header').forEach(function(el){
+    el.addEventListener('click', function(){
+      var group = el.closest('.navgroup');
+      var wasExpanded = group.classList.contains('expanded');
+      document.querySelectorAll('.navgroup').forEach(function(g){ g.classList.remove('expanded'); });
+      if (!wasExpanded) {
+        group.classList.add('expanded');
+        var firstChild = group.querySelector('.navchild');
+        if (firstChild) showPage(firstChild.getAttribute('data-page'));
+      }
+    });
+  });
+}
+
+var currentPage = 'overview';
+function showPage(key){
+  currentPage = key;
+  document.querySelectorAll('.page').forEach(function(el){ el.classList.remove('active'); });
+  var t = document.getElementById('page-' + key);
+  if (t) t.classList.add('active');
+
+  document.querySelectorAll('.navitem').forEach(function(el){ el.classList.remove('active'); });
+  document.querySelectorAll('.navchild').forEach(function(el){ el.classList.remove('active'); });
+  document.querySelectorAll('.navgroup-header').forEach(function(el){ el.classList.remove('has-active'); });
+
+  var flat = document.querySelector('.navitem[data-page="' + key + '"]');
+  if (flat) flat.classList.add('active');
+  var child = document.querySelector('.navchild[data-page="' + key + '"]');
+  if (child) {
+    child.classList.add('active');
+    var group = child.closest('.navgroup');
+    group.classList.add('expanded');
+    group.querySelector('.navgroup-header').classList.add('has-active');
+  }
+  window.scrollTo(0,0);
+  closeMobileNav();
+}
+
+function buildOverview(){
+  var totalAll = 0, doneAll = 0;
+  subpageDefs.forEach(function(sp){ var s = subpageStats(sp); totalAll += s.total; doneAll += s.done; });
+  var ps = partnershipsStats(); totalAll += ps.total; doneAll += ps.done;
+  var overallPct = totalAll ? Math.round((doneAll/totalAll)*100) : 0;
+
+  var opsStaffStat = subpageStats(subpageDefs.find(function(sp){return sp.key==="operations-staff";}));
+  var headCoachStat = subpageStats(subpageDefs.find(function(sp){return sp.key==="coaching-headcoach";}));
+
+  document.getElementById('overviewCards').innerHTML =
+      '<div class="kpi"><div class="lbl">Overall Progress</div><div class="val">' + overallPct + '%</div><div class="sub">' + doneAll + ' of ' + totalAll + ' tracked items done</div></div>'
+    + '<div class="kpi"><div class="lbl">Operations Staff Hired</div><div class="val">' + opsStaffStat.done + ' / ' + opsStaffStat.total + '</div><div class="sub">Front-of-house roles</div></div>'
+    + '<div class="kpi"><div class="lbl">Head Coaches Hired</div><div class="val">' + headCoachStat.done + ' / ' + headCoachStat.total + '</div><div class="sub">Onboarded to date</div></div>'
+    + '<div class="kpi"><div class="lbl">Partners Signed</div><div class="val">' + ps.done + ' / ' + ps.total + '</div><div class="sub">Agreements closed</div></div>';
+
+  var pillarLabelFor = {operations:"Operations", coaching:"Coaching", marketing:"Marketing"};
+  var cardsHtml = subpageDefs.map(function(sp,i){
+    var s = subpageStats(sp);
+    return '<div class="card' + (i%2===1?' gold':'') + '" data-page="' + sp.key + '">'
+      + '<div class="card-head"><div><span class="grp">' + pillarLabelFor[sp.pillar] + '</span><h3>' + sp.label + '</h3><div class="count">' + s.done + ' of ' + s.total + ' complete</div></div><div class="pct">' + s.pct + '%</div></div>'
+      + '<div class="bar-track"><div class="bar-fill" style="width:' + s.pct + '%"></div></div></div>';
+  }).join('') + '<div class="card" data-page="partnerships">'
+      + '<div class="card-head"><div><span class="grp">Partnerships</span><h3>Partner &amp; Vendor List</h3><div class="count">' + ps.done + ' of ' + ps.total + ' complete</div></div><div class="pct">' + ps.pct + '%</div></div>'
+      + '<div class="bar-track"><div class="bar-fill" style="width:' + ps.pct + '%"></div></div></div>';
+  document.getElementById('categoryCards').innerHTML = cardsHtml;
+  document.querySelectorAll('#categoryCards .card').forEach(function(el){
+    el.addEventListener('click', function(){ showPage(el.getAttribute('data-page')); });
+  });
+}
+
+function refreshSidebarAndOverview(){
+  buildSidebar();
+  buildOverview();
+  // re-apply active state on nav after rebuild
+  var flat = document.querySelector('.navitem[data-page="' + currentPage + '"]');
+  var child = document.querySelector('.navchild[data-page="' + currentPage + '"]');
+  if (flat) flat.classList.add('active');
+  if (child) { child.classList.add('active'); var g = child.closest('.navgroup'); g.classList.add('expanded'); g.querySelector('.navgroup-header').classList.add('has-active'); }
+}
+
+function renderApp(){
+  allTableModules.forEach(function(m){ m.render(); });
+  refreshSidebarAndOverview();
+}
+
+// ================= Instantiate all tables =================
+makeEditableTable('opsStaffTable', 'opsStaffMeta', 'opsStaff', null, STAFF_COLS, isHired, {status:"Not Started"});
+
+makeEditableTable('courtTable', 'courtMeta', 'courtOps', null, [
+  {key:'category', label:'Category', width:'13%'}, {key:'task', label:'Task', width:'32%'}, {key:'courtType', label:'Court Type', width:'9%'},
+  {key:'status', label:'Status', type:'select', options:GENERIC_STATUS_OPTIONS, width:'11%'},
+  {key:'owner', label:'Owner', width:'14%'}, {key:'dueDate', label:'Due Date', width:'11%'}, {key:'notes', label:'Notes', meta:true, width:'10%'}
+], isDone, {status:"Not Started", courtType:"All"});
+
+var EQUIP_COLS = [
+  {key:'item', label:'Item', width:'22%'}, {key:'category', label:'Category', width:'13%'}, {key:'needed', label:'Qty Needed', type:'number', width:'7%'},
+  {key:'supplier', label:'Supplier', width:'14%'}, {key:'status', label:'Status', type:'select', options:EQUIP_STATUS_OPTIONS, width:'10%'},
+  {key:'unitCost', label:'Unit Cost', width:'10%'}, {key:'totalCost', label:'Total Cost', width:'10%'}, {key:'eta', label:'ETA', width:'6%'},
+  {key:'notes', label:'Notes', meta:true, width:'8%'}
+];
+makeEditableTable('equipRentalTable', null, 'equipRental', null, EQUIP_COLS, isStocked, {status:"Not Ordered"});
+makeEditableTable('equipShopTable', null, 'equipShop', null, EQUIP_COLS, isStocked, {status:"Not Ordered"});
+allTableModules.push({ render: function(){
+  var combined = data.equipRental.concat(data.equipShop);
+  var s = statsFor(combined, isStocked);
+  document.getElementById('equipMeta').textContent = s.done + ' of ' + s.total + ' complete (' + s.pct + '%)';
+}});
+
+var ACTIVITY_COLS = [
+  {key:'monthLabel', label:'Month', width:'9%'}, {key:'approxMonth', label:'Approx. Month', meta:true, width:'16%'},
+  {key:'category', label:'Category', type:'select', options:["Basic Activities","Appearances","Specials"], width:'16%'},
+  {key:'activity', label:'Activity', width:'42%'}, {key:'status', label:'Status', type:'select', options:ACTIVITY_STATUS_OPTIONS, width:'17%'}
+];
+["Q1","Q2","Q3","Q4"].forEach(function(q){
+  makeEditableTable('activities' + q + 'Table', null, 'activitiesCalendar', function(l){ return byField(l,"quarter",q); }, ACTIVITY_COLS, isConfirmed, {quarter:q, status:"Planned"});
+});
+allTableModules.push({ render: function(){
+  var s = statsFor(data.activitiesCalendar, isConfirmed);
+  document.getElementById('activitiesMeta').textContent = s.done + ' of ' + s.total + ' confirmed (' + s.pct + '% — rest are Planned)';
+}});
+
+makeEditableTable('dailyTable', 'dailyMeta', 'dailyChecklist', null, [
+  {key:'category', label:'Category', type:'select', options:["Courts Condition","Equipment Condition","Club Cleanliness","Front Desk Performance"], width:'18%'},
+  {key:'item', label:'Checklist Item', width:'54%'}, {key:'status', label:'Status', type:'select', options:DAILY_STATUS_OPTIONS, width:'12%'},
+  {key:'owner', label:'Owner', width:'16%'}
+], isActive, {status:"Active"});
+
+makeEditableTable('maintTable', 'maintMeta', 'maintenance', null, [
+  {key:'task', label:'Task', width:'38%'}, {key:'status', label:'Status', type:'select', options:GENERIC_STATUS_OPTIONS, width:'13%'},
+  {key:'owner', label:'Owner', width:'13%'}, {key:'dueDate', label:'Due Date', width:'12%'}, {key:'notes', label:'Notes', meta:true, width:'24%'}
+], isDone, {status:"Not Started"});
+
+["Head Coach","Coach","Assistant Coach"].forEach(function(tier){
+  var containerId = tier === "Head Coach" ? "headCoachTable" : (tier === "Coach" ? "coachTable" : "assistCoachTable");
+  var metaId = tier === "Head Coach" ? "headCoachMeta" : (tier === "Coach" ? "coachMeta" : "assistCoachMeta");
+  makeEditableTable(containerId, metaId, 'coachStaff', function(l){ return byField(l,"tier",tier); }, STAFF_COLS, isHired, {tier:tier, status:"Not Started"});
+});
+
+makeEditableTable('coachPipelineTable', 'coachPipelineMeta', 'coachPipeline', null, [
+  {key:'name', label:'Name', width:'15%'}, {key:'sport', label:'Sport', type:'select', options:["Padel","Pickleball","Tennis"], width:'10%'},
+  {key:'level', label:'Level', width:'10%'}, {key:'contact', label:'Contact', meta:true, width:'14%'}, {key:'rate', label:'Rate / Split', width:'14%'},
+  {key:'status', label:'Status', type:'select', options:PIPELINE_STATUS_OPTIONS, width:'11%'},
+  {key:'nextStep', label:'Next Step', meta:true, width:'16%'}, {key:'lastContact', label:'Last Contact', width:'10%'}
+], isSigned, {status:"Prospecting"});
+
+makeEditableTable('coachTasksTable', 'coachTasksMeta', 'coachTasks', null, [
+  {key:'task', label:'Task', width:'34%'}, {key:'category', label:'Category', type:'select', options:["Policy","Schedule","Onboarding","Training"], width:'14%'},
+  {key:'status', label:'Status', type:'select', options:GENERIC_STATUS_OPTIONS, width:'12%'},
+  {key:'owner', label:'Owner', width:'12%'}, {key:'dueDate', label:'Due Date', width:'12%'}, {key:'notes', label:'Notes', meta:true, width:'16%'}
+], isDone, {status:"Not Started"});
+
+makeEditableTable('mktStaffTable', 'mktStaffMeta', 'mktStaff', null, STAFF_COLS, isHired, {status:"Not Started"});
+
+makeEditableTable('marketingAccountsTable', 'marketingAccountsMeta', 'marketingAccounts', null, [
+  {key:'platform', label:'Platform', type:'select', options:["Facebook","Instagram","TikTok","YouTube","Zalo OA","Website","Google Business","Other"], width:'15%'},
+  {key:'handle', label:'Handle / Account', width:'20%'}, {key:'status', label:'Status', type:'select', options:ACCOUNTS_STATUS_OPTIONS, width:'12%'},
+  {key:'owner', label:'Owner', width:'13%'}, {key:'notes', label:'Notes', meta:true, width:'40%'}
+], isAccountDone, {status:"Not Started"});
+
+makeEditableTable('marketingPlanTable', 'marketingPlanMeta', 'marketingPlan', null, [
+  {key:'task', label:'Task', width:'38%'}, {key:'category', label:'Category', type:'select', options:["Brand Book","Marketing Plan","Marketing Staffing","Sponsorship","Other"], width:'18%'},
+  {key:'status', label:'Status', type:'select', options:GENERIC_STATUS_OPTIONS, width:'14%'},
+  {key:'owner', label:'Owner', width:'14%'}, {key:'dueDate', label:'Due Date', width:'16%'}
+], isDone, {status:"Not Started"});
+
+makeEditableTable('contentPlanTable', 'contentPlanMeta', 'contentPlan', null, [
+  {key:'date', label:'Date / Week', width:'15%'}, {key:'platform', label:'Platform', width:'18%'}, {key:'contentType', label:'Content Type', width:'15%'},
+  {key:'topic', label:'Topic', width:'37%'}, {key:'status', label:'Status', type:'select', options:ACCOUNTS_STATUS_OPTIONS, width:'15%'}
+], isDone, {status:"Not Started"});
+
+var PARTNER_COLS = [
+  {key:'category', label:'Category', width:'16%'}, {key:'provider', label:'Provider', width:'14%'}, {key:'dealStructure', label:'Deal Structure', meta:true, width:'20%'},
+  {key:'status', label:'Status', type:'select', options:PARTNER_STATUS_OPTIONS, width:'11%'},
+  {key:'priority', label:'Priority', type:'select', options:PARTNER_PRIORITY_OPTIONS, width:'9%'},
+  {key:'nextAction', label:'Next Action', meta:true, width:'16%'}, {key:'dueDate', label:'Due Date', width:'8%'}, {key:'notes', label:'Notes', meta:true, width:'6%'}
+];
+var SECTORS = ["Facility Operations","Wellness & Recovery","Food & Beverage","Sport Equipment","Legal & Compliance","Partnerships & Memberships"];
+var partnerContainerIds = {"Facility Operations":"partFacilityTable","Wellness & Recovery":"partWellnessTable","Food & Beverage":"partFBTable","Sport Equipment":"partEquipTable","Legal & Compliance":"partLegalTable","Partnerships & Memberships":"partMembershipTable"};
+SECTORS.forEach(function(sector){
+  makeEditableTable(partnerContainerIds[sector], null, 'partnerships', function(l){ return byField(l,"sector",sector); }, PARTNER_COLS, isSigned, {sector:sector, status:"Prospecting"});
+});
+allTableModules.push({ render: function(){
+  var s = statsFor(data.partnerships, isSigned);
+  document.getElementById('partnershipsMeta').textContent = s.done + ' of ' + s.total + ' signed (' + s.pct + '%)';
+}});
+
+// ================= Init =================
+renderApp();
+showPage('overview');
+if (SYNC_URL) pullAll();
+</script>
+
+</body>
+</html>
